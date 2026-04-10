@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>factorflow® Dashboard SPI</title>
+  <style>
+    :root {
+      --black:#000; --charcoal:#1f1f1f; --dark-grey:#575757;
+      --mid-grey:#8c8c8c; --line:#d1d1d1; --soft-line:#ebebeb;
+      --paper:#f7f7f7; --white:#fff; --soft-fill:#fafafa;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:"Times New Roman",Times,serif;background:var(--paper);color:var(--black);line-height:1.5;font-size:15px}
+    .nav{position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;padding:0 30px;background:var(--charcoal);border-bottom:1px solid #3b3b3b}
+    .nav a{color:#d8d8d8;text-decoration:none;font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:13px 14px;border-bottom:2px solid transparent}
+    .nav a:hover{color:#fff;border-bottom-color:#b8b8b8}
+    .hero{background:linear-gradient(180deg,#101010 0%,#1d1d1d 100%);color:#fff;padding:50px 62px 40px;border-bottom:1px solid #2e2e2e}
+    .eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ccc;margin-bottom:14px}
+    .hero h1{font-size:clamp(30px,4vw,48px);line-height:1.05;font-weight:700;margin-bottom:12px}
+    .hero h1 sup{font-size:.42em;vertical-align:super}
+    .hero-rule{width:56px;height:2px;background:#bdbdbd;margin:18px 0}
+    .hero-text{max-width:980px;font-size:15px;color:#ddd}
+    .hero-meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:#d0d0d0}
+    .wrap{max-width:1220px;margin:0 auto;padding:32px 34px 54px}
+    .section{margin-top:48px;scroll-margin-top:58px}
+    .section-eye{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dark-grey);margin-bottom:5px}
+    .section-title{font-size:30px;font-weight:700;margin-bottom:6px}
+    .section-desc{font-size:14px;color:var(--dark-grey);margin-bottom:14px}
+    .section-rule{height:1px;background:var(--line);margin-bottom:22px}
+    .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:22px}
+    .kpi-card{background:#fff;padding:18px 16px;border-top:3px solid var(--charcoal)}
+    .kpi-label{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dark-grey);margin-bottom:6px}
+    .kpi-value{font-size:28px;font-weight:700;line-height:1;margin-bottom:5px}
+    .kpi-sub{font-size:12px;color:var(--mid-grey)}
+    .card{background:#fff;border:1px solid var(--line);padding:22px;margin-bottom:20px}
+    .card-title{font-size:21px;font-weight:700;margin-bottom:4px}
+    .card-sub{font-size:12px;color:var(--mid-grey);margin-bottom:12px}
+    .logic-list{border:1px solid var(--line);background:var(--soft-fill)}
+    .logic-item{display:grid;grid-template-columns:200px 1fr;gap:14px;padding:12px 14px;border-bottom:1px solid var(--soft-line)}
+    .logic-item:last-child{border-bottom:none}
+    .logic-key{font-weight:700;color:var(--charcoal)}
+    /* Charts */
+    .chart-box{position:relative;height:480px;border:1px solid var(--line);
+      background:linear-gradient(to right,rgba(0,0,0,.04) 1px,transparent 1px),
+                  linear-gradient(to bottom,rgba(0,0,0,.04) 1px,transparent 1px),#fcfcfc;
+      background-size:44px 44px;overflow:hidden}
+    .chart-svg{width:100%;height:100%;display:block}
+    .chart-label{position:absolute;right:10px;bottom:8px;background:rgba(255,255,255,.92);
+      border:1px solid var(--soft-line);padding:2px 7px;font-size:11px;color:var(--dark-grey)}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--line)}
+    table{width:100%;border-collapse:collapse;min-width:620px;font-size:12px}
+    th{text-align:left;padding:8px 10px;border-bottom:2px solid var(--black);font-size:10px;
+       letter-spacing:.6px;text-transform:uppercase;background:#fafafa;white-space:nowrap}
+    th.sortable{cursor:pointer;user-select:none}
+    th.sortable:hover{background:#efefef}
+    th.sort-asc::after{content:" ▲";color:var(--charcoal)}
+    th.sort-desc::after{content:" ▼";color:var(--charcoal)}
+    td{padding:7px 10px;border-bottom:1px solid var(--soft-line);vertical-align:middle}
+    tbody tr:nth-child(even) td{background:#fcfcfc}
+    tbody tr:hover td{background:#f5f5f5}
+    .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .pos{color:#1a7a1a}.neg{color:#c0392b}
+    .footer{text-align:center;padding:28px 20px 18px;font-size:11px;color:var(--mid-grey);
+      border-top:1px solid var(--line);margin-top:34px}
+    @media(max-width:980px){.kpi-row,.grid-2{grid-template-columns:1fr 1fr}}
+    @media(max-width:760px){
+      .hero,.wrap,.nav{padding-left:16px;padding-right:16px}
+      .kpi-row,.grid-2{grid-template-columns:1fr}
+      .logic-item{grid-template-columns:1fr;gap:4px}
+      .section-title{font-size:24px}
+      .chart-box{height:340px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="#universum">Universum</a>
+    <a href="#logik">Selektionslogik</a>
+    <a href="#portfolio">Momentum-Portfolio</a>
+    <a href="#amc">AMC factorflow® SPI</a>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">factorflow® · Dashboard SPI · Stand 08.04.2026</div>
+    <h1>factorflow<sup>®</sup> Dashboard SPI</h1>
+    <div class="hero-rule"></div>
+    <div class="hero-text">
+      Konzentriert auf das Wesentliche: <strong>Basisuniversum</strong>, <strong>Selektionslogik</strong>,
+      <strong>aktuelles Momentum-Portfolio</strong> und <strong>AMC-Entwicklung</strong>.
+    </div>
+    <div class="hero-meta">
+      <span><strong>Universum:</strong> SPI &gt; CHF 3 Mia.</span>
+      <span><strong>Selektion:</strong> 25 beste Aktien nach ffTM</span>
+      <span><strong>Allokation:</strong> gleichgewichtet</span>
+      <span><strong>Datenstand:</strong> 08.04.2026</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ABSCHNITT 1 -->
+    <section class="section" id="universum">
+      <h2 class="section-title">Universum factorflow® SPI</h2>
+      <p class="section-desc">Basisuniversum gemäss definierter Filterlogik — alle SPI-Titel mit Marktkapitalisierung über CHF 3 Milliarden.</p>
+      <div class="section-rule"></div>
+      <div class="kpi-row" id="kpiRow"></div>
+    </section>
+
+    <!-- ABSCHNITT 2 -->
+    <section class="section" id="logik">
+      <h2 class="section-title">Selektionslogik factorflow® SPI</h2>
+      <p class="section-desc">Fixe Regeln. Kurz und transparent.</p>
+      <div class="section-rule"></div>
+      <div class="card">
+        <div class="logic-list" id="logicList"></div>
+      </div>
+    </section>
+
+    <!-- ABSCHNITT 3 -->
+    <section class="section" id="portfolio">
+      <h2 class="section-title">Momentum-Portfolio factorflow® SPI</h2>
+      <p class="section-desc">
+        Die 25 aktuellen Portfoliotitel, alphabetisch vorsortiert.
+        Klick auf einen Spaltentitel sortiert die Tabelle nach dieser Spalte.
+      </p>
+      <div class="section-rule"></div>
+      <div class="card">
+        <div class="card-title">Portfolio-Tabelle factorflow® SPI</div>
+        <div class="card-sub">25 Titel · Stand 08.04.2026 · klickbar sortierbar nach jeder Spalte</div>
+        <div class="table-wrap">
+          <table id="portfolioTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABSCHNITT 4 -->
+    <section class="section" id="amc">
+      <h2 class="section-title">AMC factorflow® SPI</h2>
+      <p class="section-desc">Produktsicht mit Kennzahlen und zwei Grafiken. Zeitreihe ab 05.01.2026.</p>
+      <div class="section-rule"></div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Kennzahlen factorflow® SPI</div>
+        <div class="card-sub">Stand 08.04.2026</div>
+        <div class="table-wrap">
+          <table id="amcTable" style="min-width:0;"></table>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="padding-bottom:14px;">
+          <div class="card-title">Entwicklung factorflow® SPI und SPI</div>
+          <div class="card-sub">Indexiert auf 0% per 05.01.2026</div>
+          <div class="chart-box">
+            <svg class="chart-svg" id="amcChart" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </div>
+        <div class="card" style="padding-bottom:14px;">
+          <div class="card-title">Relative Entwicklung factorflow® SPI vs. SPI</div>
+          <div class="card-sub">Outperformance in Prozentpunkten · Start 0% per 05.01.2026</div>
+          <div class="chart-box">
+            <svg class="chart-svg" id="relativeChart" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      factorflow® Dashboard SPI · Datenstand 08.04.2026 · Quelldaten: Trendanalyse WCGROB SPI &amp; factorflow® SPI · copyright Winterthur Consulting Group / Rolf Gloor
+    </div>
+  </main>
+
+  <script>
+    const dashboard = {"kpis": [{"label": "Basisuniversum", "value": "65", "sub": "SPI > CHF 3 Mia."}, {"label": "Portfolio-Titel", "value": "25", "sub": "gleichgewichtet"}, {"label": "Top ffTM", "value": "0.03291", "sub": "BEKB N"}, {"label": "Stichtag", "value": "08.04.2026", "sub": "aktuelle Selektion"}, {"label": "Methodik", "value": "ffTM", "sub": "zentrale Kennzahl"}], "portfolio": [{"name": "ABB Rg", "ffTM": "0.15490", "ytd": "19.55%", "weight": "4.00%", "mom4": "-12.09%", "mom26": "13.96%", "vola": "27.67%", "taa": "4.32%"}, {"name": "Allreal Hldg Rg", "ffTM": "0.25600", "ytd": "11.03%", "weight": "4.00%", "mom4": "-4.69%", "mom26": "21.20%", "vola": "12.55%", "taa": "3.94%"}, {"name": "Barry Callebaut N", "ffTM": "0.13731", "ytd": "3.22%", "weight": "4.00%", "mom4": "-5.14%", "mom26": "26.72%", "vola": "46.24%", "taa": "3.96%"}, {"name": "BB Biotech N", "ffTM": "0.17200", "ytd": "0.00%", "weight": "4.00%", "mom4": "-9.02%", "mom26": "19.17%", "vola": "27.84%", "taa": "3.85%"}, {"name": "BC Vaudoise Rg", "ffTM": "0.29144", "ytd": "31.67%", "weight": "4.00%", "mom4": "6.89%", "mom26": "34.29%", "vola": "16.53%", "taa": "3.95%"}, {"name": "BEKB N", "ffTM": "0.52930", "ytd": "34.41%", "weight": "4.00%", "mom4": "7.43%", "mom26": "53.80%", "vola": "14.09%", "taa": "3.99%"}, {"name": "Emmi N", "ffTM": "0.07783", "ytd": "12.24%", "weight": "4.00%", "mom4": "1.48%", "mom26": "22.27%", "vola": "19.20%", "taa": "3.86%"}, {"name": "Huber + Suhner N", "ffTM": "0.22387", "ytd": "35.50%", "weight": "4.00%", "mom4": "-3.42%", "mom26": "20.83%", "vola": "35.14%", "taa": "4.29%"}, {"name": "Luzerner KB Rg", "ffTM": "0.33384", "ytd": "14.78%", "weight": "4.00%", "mom4": "1.35%", "mom26": "31.75%", "vola": "14.92%", "taa": "3.90%"}, {"name": "Mobimo Hldg N", "ffTM": "0.18676", "ytd": "3.55%", "weight": "4.00%", "mom4": "-5.89%", "mom26": "17.16%", "vola": "13.25%", "taa": "3.98%"}, {"name": "Nestle N", "ffTM": "0.06009", "ytd": "0.25%", "weight": "4.00%", "mom4": "-9.06%", "mom26": "6.86%", "vola": "20.37%", "taa": "4.00%"}, {"name": "Novartis N", "ffTM": "0.13705", "ytd": "11.48%", "weight": "4.00%", "mom4": "-8.70%", "mom26": "19.68%", "vola": "20.75%", "taa": "3.91%"}, {"name": "PSP Swiss Propert N", "ffTM": "0.19747", "ytd": "9.69%", "weight": "4.00%", "mom4": "-6.16%", "mom26": "15.81%", "vola": "14.46%", "taa": "3.98%"}, {"name": "Roche Hldg PC Br", "ffTM": "0.11800", "ytd": "-3.50%", "weight": "4.00%", "mom4": "-14.85%", "mom26": "20.85%", "vola": "25.32%", "taa": "3.87%"}, {"name": "Sandoz Group Rg", "ffTM": "0.25254", "ytd": "12.45%", "weight": "4.00%", "mom4": "-11.06%", "mom26": "28.17%", "vola": "31.92%", "taa": "4.18%"}, {"name": "SGS Rg", "ffTM": "0.05432", "ytd": "-7.07%", "weight": "4.00%", "mom4": "-11.45%", "mom26": "4.99%", "vola": "19.69%", "taa": "3.97%"}, {"name": "SIG Group Rg", "ffTM": "0.42807", "ytd": "6.08%", "weight": "4.00%", "mom4": "-1.73%", "mom26": "43.37%", "vola": "42.65%", "taa": "3.95%"}, {"name": "SPS N", "ffTM": "0.27037", "ytd": "11.77%", "weight": "4.00%", "mom4": "-6.79%", "mom26": "22.92%", "vola": "15.26%", "taa": "4.04%"}, {"name": "St.Galler KB N", "ffTM": "0.29111", "ytd": "18.74%", "weight": "4.00%", "mom4": "3.12%", "mom26": "32.40%", "vola": "13.09%", "taa": "3.95%"}, {"name": "Sulzer N", "ffTM": "0.18444", "ytd": "15.06%", "weight": "4.00%", "mom4": "-4.71%", "mom26": "20.03%", "vola": "31.00%", "taa": "4.08%"}, {"name": "Swisscom Rg", "ffTM": "0.19100", "ytd": "18.42%", "weight": "4.00%", "mom4": "-1.84%", "mom26": "19.72%", "vola": "15.85%", "taa": "3.87%"}, {"name": "The Swatch Grp Br", "ffTM": "0.10278", "ytd": "9.48%", "weight": "4.00%", "mom4": "-13.31%", "mom26": "15.78%", "vola": "34.31%", "taa": "4.16%"}, {"name": "Valiant Holding N", "ffTM": "0.26731", "ytd": "19.60%", "weight": "4.00%", "mom4": "3.47%", "mom26": "34.99%", "vola": "16.70%", "taa": "3.96%"}, {"name": "VAT Group N", "ffTM": "0.43744", "ytd": "38.43%", "weight": "4.00%", "mom4": "-5.11%", "mom26": "63.43%", "vola": "44.69%", "taa": "4.05%"}, {"name": "Walliser KB N", "ffTM": "0.16484", "ytd": "17.54%", "weight": "4.00%", "mom4": "7.34%", "mom26": "19.46%", "vola": "11.19%", "taa": "3.94%"}], "ranking": [{"rank": 1, "name": "BEKB N", "ffTM": 0.03291, "mom26": "53.80%", "mom4": "7.43%", "vola": "14.09%"}, {"rank": 2, "name": "St.Galler KB N", "ffTM": 0.02237, "mom26": "32.40%", "mom4": "3.12%", "vola": "13.09%"}, {"rank": 3, "name": "Allreal Hldg Rg", "ffTM": 0.02063, "mom26": "21.20%", "mom4": "-4.69%", "vola": "12.55%"}, {"rank": 4, "name": "Luzerner KB Rg", "ffTM": 0.02037, "mom26": "31.75%", "mom4": "1.35%", "vola": "14.92%"}, {"rank": 5, "name": "SPS N", "ffTM": 0.01947, "mom26": "22.92%", "mom4": "-6.79%", "vola": "15.26%"}, {"rank": 6, "name": "BC Vaudoise Rg", "ffTM": 0.01658, "mom26": "34.29%", "mom4": "6.89%", "vola": "16.53%"}, {"rank": 7, "name": "VAT Group N", "ffTM": 0.01534, "mom26": "63.43%", "mom4": "-5.11%", "vola": "44.69%"}, {"rank": 8, "name": "PSP Swiss Propert N", "ffTM": 0.0152, "mom26": "15.81%", "mom4": "-6.16%", "vola": "14.46%"}, {"rank": 9, "name": "Roche Hldg PC Br", "ffTM": 0.0141, "mom26": "20.85%", "mom4": "-14.85%", "vola": "25.32%"}, {"rank": 10, "name": "Novartis N", "ffTM": 0.01368, "mom26": "19.68%", "mom4": "-8.70%", "vola": "20.75%"}, {"rank": 11, "name": "Swisscom Rg", "ffTM": 0.0136, "mom26": "19.72%", "mom4": "-1.84%", "vola": "15.85%"}, {"rank": 12, "name": "Sandoz Group Rg", "ffTM": 0.01229, "mom26": "28.17%", "mom4": "-11.06%", "vola": "31.92%"}, {"rank": 13, "name": "Liechten Landb Rg", "ffTM": 0.01221, "mom26": "30.05%", "mom4": "6.97%", "vola": "18.91%"}, {"rank": 14, "name": "Emmi N", "ffTM": 0.01083, "mom26": "22.27%", "mom4": "1.48%", "vola": "19.20%"}, {"rank": 15, "name": "SIG Group Rg", "ffTM": 0.01058, "mom26": "43.37%", "mom4": "-1.73%", "vola": "42.65%"}, {"rank": 16, "name": "ABB Rg", "ffTM": 0.00941, "mom26": "13.96%", "mom4": "-12.09%", "vola": "27.67%"}, {"rank": 17, "name": "The Swatch Grp Br", "ffTM": 0.00848, "mom26": "15.78%", "mom4": "-13.31%", "vola": "34.31%"}, {"rank": 18, "name": "SGS Rg", "ffTM": 0.00835, "mom26": "4.99%", "mom4": "-11.45%", "vola": "19.69%"}, {"rank": 19, "name": "Sulzer N", "ffTM": 0.00798, "mom26": "20.03%", "mom4": "-4.71%", "vola": "31.00%"}, {"rank": 20, "name": "Nestle N", "ffTM": 0.00781, "mom26": "6.86%", "mom4": "-9.06%", "vola": "20.37%"}, {"rank": 21, "name": "Kuehne+Nagel Int N", "ffTM": 0.00772, "mom26": "19.10%", "mom4": "-4.43%", "vola": "30.47%"}, {"rank": 22, "name": "EMS-CHEM HLDG N", "ffTM": 0.00761, "mom26": "14.31%", "mom4": "-1.17%", "vola": "20.36%"}, {"rank": 23, "name": "Vontobel Holding N", "ffTM": 0.00721, "mom26": "11.81%", "mom4": "-4.27%", "vola": "22.32%"}, {"rank": 24, "name": "Julius Baer Grp N", "ffTM": 0.00704, "mom26": "8.24%", "mom4": "-11.71%", "vola": "28.31%"}, {"rank": 25, "name": "Huber + Suhner N", "ffTM": 0.0069, "mom26": "20.83%", "mom4": "-3.42%", "vola": "35.14%"}], "amc": {"metrics": [{"label": "Aktueller Kurs factorflow® SPI", "value": "119.91"}, {"label": "factorflow® SPI YtD", "value": "+4.42%"}, {"label": "SPI YtD", "value": "+0.86%"}, {"label": "Outperformance factorflow® SPI vs. SPI", "value": "+3.56%"}, {"label": "Max. Drawdown factorflow® SPI", "value": "-5.97%"}, {"label": "Volatilität factorflow® SPI", "value": "12.15%"}, {"label": "Sharpe Ratio factorflow® SPI", "value": "0.36"}], "series": {"labels": ["05.01.2026", "06.01.2026", "07.01.2026", "08.01.2026", "09.01.2026", "12.01.2026", "13.01.2026", "14.01.2026", "15.01.2026", "16.01.2026", "19.01.2026", "20.01.2026", "21.01.2026", "22.01.2026", "23.01.2026", "26.01.2026", "27.01.2026", "28.01.2026", "29.01.2026", "30.01.2026", "02.02.2026", "03.02.2026", "04.02.2026", "05.02.2026", "06.02.2026", "09.02.2026", "10.02.2026", "11.02.2026", "12.02.2026", "13.02.2026", "16.02.2026", "17.02.2026", "18.02.2026", "19.02.2026", "20.02.2026", "23.02.2026", "24.02.2026", "25.02.2026", "26.02.2026", "27.02.2026", "02.03.2026", "03.03.2026", "04.03.2026", "05.03.2026", "06.03.2026", "09.03.2026", "10.03.2026", "11.03.2026", "12.03.2026", "13.03.2026", "16.03.2026", "17.03.2026", "18.03.2026", "19.03.2026", "20.03.2026", "23.03.2026", "24.03.2026", "25.03.2026", "26.03.2026", "27.03.2026", "30.03.2026", "31.03.2026", "01.04.2026", "02.04.2026", "07.04.2026", "08.04.2026"], "amc": [1.0, 1.00216, 1.00769, 1.00443, 1.00968, 1.00917, 1.00428, 1.01402, 1.02119, 1.01848, 1.01032, 1.00364, 1.00666, 1.01491, 1.00664, 1.0032, 1.00976, 1.0017, 1.0023, 1.00619, 1.01626, 1.01302, 1.01815, 1.01704, 1.02173, 1.03122, 1.03138, 1.02425, 1.01487, 1.01905, 1.01769, 1.02611, 1.03312, 1.03069, 1.04093, 1.03461, 1.04281, 1.05103, 1.04963, 1.04947, 1.046, 1.02267, 1.03436, 1.02892, 1.01882, 1.01253, 1.02374, 1.01248, 1.01214, 1.0076, 1.01741, 1.02064, 1.01538, 1.00138, 0.9903, 0.99888, 1.00452, 1.01332, 1.01178, 1.00039, 1.00507, 1.0162, 1.02661, 1.02796, 1.02104, 1.03548], "spi": [1.0, 1.00604, 1.00778, 1.00902, 1.01422, 1.01402, 1.00888, 1.01647, 1.01923, 1.01529, 1.00515, 0.99778, 0.99817, 1.00421, 0.99906, 0.99726, 1.00315, 0.98892, 0.99587, 0.99915, 1.01364, 1.01051, 1.02093, 1.01902, 1.02198, 1.02472, 1.02441, 1.02447, 1.02392, 1.02869, 1.0318, 1.0392, 1.04316, 1.04233, 1.04641, 1.04399, 1.05176, 1.05272, 1.04927, 1.0547, 1.04287, 1.01359, 1.02166, 1.00737, 0.99354, 0.98604, 0.99484, 0.98582, 0.9837, 0.98218, 0.98467, 0.99045, 0.97729, 0.95343, 0.94323, 0.94956, 0.9588, 0.97435, 0.96994, 0.96359, 0.97047, 0.97967, 0.9964, 0.99583, 0.98101, 1.00697], "relative": [0, -0.3874, -0.0093, -0.4594, -0.454, -0.4853, -0.4595, -0.2452, 0.1959, 0.3193, 0.5172, 0.586, 0.8487, 1.0702, 0.7575, 0.5943, 0.6607, 1.2777, 0.6434, 0.704, 0.2615, 0.2512, -0.278, -0.1979, -0.0257, 0.6493, 0.6973, -0.022, -0.9051, -0.9644, -1.4106, -1.3086, -1.0043, -1.1648, -0.5481, -0.9377, -0.8943, -0.1688, 0.0363, -0.5237, 0.3134, 0.9082, 1.2706, 2.1547, 2.5283, 2.6484, 2.8897, 2.6666, 2.8437, 2.5426, 3.2741, 3.0195, 3.809, 4.7948, 4.7066, 4.9319, 4.5717, 3.8976, 4.1841, 3.6801, 3.4595, 3.6524, 3.0207, 3.2126, 4.003, 2.8502]}}};
+
+    /* ── Hilfsfunktionen ─────────────────────────────────────── */
+    function colorClass(v) {
+      const n = parseFloat(v);
+      return isNaN(n) ? '' : n >= 0 ? 'pos' : 'neg';
+    }
+    function pctVal(str) {
+      if (!str || str === 'n/a') return -Infinity;
+      return parseFloat(str.replace('%',''));
+    }
+
+    /* ── KPI ─────────────────────────────────────────────────── */
+    function renderKpis() {
+      document.getElementById('kpiRow').innerHTML = dashboard.kpis.map(k => `
+        <div class="kpi-card">
+          <div class="kpi-label">${k.label}</div>
+          <div class="kpi-value">${k.value}</div>
+          <div class="kpi-sub">${k.sub}</div>
+        </div>`).join('');
+    }
+
+    /* ── Selektionslogik ─────────────────────────────────────── */
+    function renderLogic() {
+      const logic = [
+        { key:'Basisuniversum', value:'Alle SPI-Titel mit Marktkapitalisierung grösser CHF 3 Mia.' },
+        { key:'Score',          value:'ffTM = (26W-Momentum minus 4W-Momentum) / Volatilität 1Y' },
+        { key:'Ranking',        value:'Sortierung nach ffTM in absteigender Reihenfolge' },
+        { key:'Selektion',      value:'Die 25 besten Aktien werden gleichgewichtet selektiert' },
+        { key:'Gewichtung',     value:'Das Momentum-Portfolio wird gleichgewichtet zusammengestellt (SAA je 4%)' }
+      ];
+      document.getElementById('logicList').innerHTML = logic.map(l => `
+        <div class="logic-item">
+          <div class="logic-key">${l.key}</div>
+          <div>${l.value}</div>
+        </div>`).join('');
+    }
+
+    /* ── Portfolio-Tabelle mit Sort ──────────────────────────── */
+    const COL_DEFS = [
+      { key:'name',   label:'Aktie',      num:false },
+      { key:'ffTM',   label:'ffTM',       num:true  },
+      { key:'mom26',  label:'26 Wochen',  num:true  },
+      { key:'mom4',   label:'4 Wochen',   num:true  },
+      { key:'vola',   label:'Vola',       num:true  },
+      { key:'ytd',    label:'YtD',        num:true  },
+      { key:'saa',    label:'SAA',        num:true  },
+      { key:'taa',    label:'TAA',        num:true  }
+    ];
+    let sortCol = 'name', sortDir = 1;
+
+    function sortVal(row, key) {
+      if (key === 'name') return row.name.toLowerCase();
+      if (key === 'saa')  return 4.0;
+      return pctVal(row[key === 'taa' ? 'taa' : key]);
+    }
+
+    function renderPortfolioTable() {
+      const rows = [...dashboard.portfolio].sort((a,b) => {
+        const va = sortVal(a, sortCol), vb = sortVal(b, sortCol);
+        return va < vb ? -sortDir : va > vb ? sortDir : 0;
+      });
+
+      const thead = `<thead><tr>${COL_DEFS.map(c => {
+        let cls = c.num ? 'sortable num' : 'sortable';
+        if (c.key === sortCol) cls += sortDir === 1 ? ' sort-asc' : ' sort-desc';
+        return `<th class="${cls}" data-col="${c.key}">${c.label}</th>`;
+      }).join('')}</tr></thead>`;
+
+      const tbody = `<tbody>${rows.map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td class="num">${r.ffTM}</td>
+          <td class="num ${colorClass(r.mom26)}">${r.mom26}</td>
+          <td class="num ${colorClass(r.mom4)}">${r.mom4}</td>
+          <td class="num">${r.vola}</td>
+          <td class="num ${colorClass(r.ytd)}">${r.ytd}</td>
+          <td class="num">4.00%</td>
+          <td class="num">${r.taa || 'n/a'}</td>
+        </tr>`).join('')}
+      </tbody>`;
+
+      const tbl = document.getElementById('portfolioTable');
+      tbl.innerHTML = thead + tbody;
+      tbl.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          sortCol === col ? (sortDir *= -1) : (sortCol = col, sortDir = col === 'name' ? 1 : -1);
+          renderPortfolioTable();
+        });
+      });
+    }
+
+    /* ── AMC-Kennzahlen ──────────────────────────────────────── */
+    function renderAmcTable() {
+      document.getElementById('amcTable').innerHTML = `
+        <thead><tr><th>Kennzahlen</th><th class="num">Wert</th></tr></thead>
+        <tbody>${dashboard.amc.metrics.map(r =>
+          `<tr><td>${r.label}</td><td class="num">${r.value}</td></tr>`
+        ).join('')}</tbody>`;
+    }
+
+    /* ── Liniendiagramm ──────────────────────────────────────── */
+    function monthLabel(dateStr) {
+      // dateStr = "05.01.2026"
+      const MONTHS = ['','Jan','Feb','Mrz','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+      const m = parseInt(dateStr.substring(3,5));
+      return MONTHS[m] || '';
+    }
+
+    function renderLineChart(svgId, seriesA, seriesB, labels, labelA, labelB) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+      const isRelative = !seriesB;
+      const allVals = seriesB ? [...seriesA, ...seriesB] : seriesA;
+      const rawMin = Math.min(...allVals), rawMax = Math.max(...allVals);
+      const pad = (rawMax - rawMin) * 0.07 || 0.5;
+      const vMin = rawMin - pad, vMax = rawMax + pad;
+
+      const W=640, H=480, left=56, right=22, top=24, bottom=46;
+      const uw=W-left-right, uh=H-top-bottom;
+      const px=(i,len)=>left+(i/(len-1))*uw;
+      const py=v=>top+((vMax-v)/(vMax-vMin))*uh;
+      const poly=arr=>arr.map((v,i)=>`${px(i,arr.length)},${py(v)}`).join(' ');
+
+      // Y grid + labels (6 lines)
+      let g = '';
+      for (let i=0;i<=6;i++) {
+        const v=vMax-(i/6)*(vMax-vMin), y=top+(i/6)*uh;
+        g+=`<line x1="${left}" y1="${y}" x2="${W-right}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
+        const lbl = isRelative ? v.toFixed(2)+'%' : (v>=0?'+':'')+v.toFixed(2)+'%';
+        g+=`<text x="${left-5}" y="${y+4}" text-anchor="end" font-size="11" font-family="Times New Roman" fill="#777">${lbl}</text>`;
+      }
+
+      // X axis — Monatsname nur beim Wechsel, Tick bei jedem Punkt
+      let prevMonth = '';
+      for (let i=0;i<labels.length;i++) {
+        const x=px(i,labels.length);
+        const mo=monthLabel(labels[i]);
+        g+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${H-bottom}" stroke="#f0f0f0" stroke-width="1"/>`;
+        if (mo !== prevMonth) {
+          // Monatswechsel: dickere Linie + Label
+          g+=`<line x1="${x}" y1="${H-bottom}" x2="${x}" y2="${H-bottom+6}" stroke="#999" stroke-width="1.5"/>`;
+          g+=`<text x="${x}" y="${H-bottom+20}" text-anchor="middle" font-size="12" font-family="Times New Roman" fill="#555" font-weight="bold">${mo}</text>`;
+          prevMonth = mo;
+        }
+      }
+
+      // Zero line for relative
+      if (isRelative) {
+        const zy=py(0);
+        if (zy>=top && zy<=H-bottom)
+          g+=`<line x1="${left}" y1="${zy}" x2="${W-right}" y2="${zy}" stroke="#aaa" stroke-width="1.4" stroke-dasharray="5 4"/>`;
+      }
+
+      let body=`${g}<polyline fill="none" stroke="#000" stroke-width="2.6" stroke-linejoin="round" points="${poly(seriesA)}"/>`;
+      if (seriesB) {
+        body+=`<polyline fill="none" stroke="#888" stroke-width="2" stroke-dasharray="6 3" stroke-linejoin="round" points="${poly(seriesB)}"/>`;
+        body+=`<rect x="${W-140}" y="16" width="124" height="40" rx="3" fill="rgba(255,255,255,.94)" stroke="#ccc" stroke-width="1"/>`;
+        body+=`<line x1="${W-134}" y1="30" x2="${W-114}" y2="30" stroke="#000" stroke-width="2.6"/>`;
+        body+=`<text x="${W-110}" y="34" font-size="12" font-family="Times New Roman">${labelA}</text>`;
+        body+=`<line x1="${W-134}" y1="46" x2="${W-114}" y2="46" stroke="#888" stroke-width="2" stroke-dasharray="6 3"/>`;
+        body+=`<text x="${W-110}" y="50" font-size="12" font-family="Times New Roman">${labelB}</text>`;
+      }
+      svg.innerHTML = body;
+    }
+
+    /* ── Init ────────────────────────────────────────────────── */
+    renderKpis();
+    renderLogic();
+    renderPortfolioTable();
+    renderAmcTable();
+
+    const s = dashboard.amc.series;
+    const amcSeries = s.amc.map(v=>(v-1)*100);
+    const spiSeries = s.spi.map(v=>(v-1)*100);
+    const relSeries = s.relative;
+
+    // Render lines
+    renderLineChart('amcChart',  amcSeries, spiSeries, s.labels, 'factorflow® SPI', 'SPI');
+    renderLineChart('relativeChart', relSeries, null, s.labels, 'Relativ','');
+
+    // Chart geometry constants (must match renderLineChart)
+    const W=640,H=480,CL=56,CR=22,CT=24,CB=46;
+
+    // Compute vMin/vMax for each chart (same logic as renderLineChart)
+    function chartBounds(a, b) {
+      const all = b ? [...a,...b] : a;
+      const rMin=Math.min(...all), rMax=Math.max(...all);
+      const pad=(rMax-rMin)*0.07||0.5;
+      return {vMin:rMin-pad, vMax:rMax+pad};
+    }
+    const bAmc = chartBounds(amcSeries, spiSeries);
+    const bRel = chartBounds(relSeries, null);
+
+    // Attach interactive tooltips
+    addTooltip('amcChart', amcSeries, spiSeries, s.labels, 'factorflow® SPI', 'SPI',
+               CL, CR, CT, CB, W, H, bAmc.vMin, bAmc.vMax);
+    addTooltip('relativeChart', relSeries, null, s.labels, 'Relativ', '',
+               CL, CR, CT, CB, W, H, bRel.vMin, bRel.vMax);
+
+    /* ── Tooltip-Overlay für interaktive Grafiken ─────────────── */
+    function addTooltip(svgId, seriesA, seriesB, labels, labelA, labelB,
+                        left, right, top, bottom, W, H, vMin, vMax) {
+      const svg = document.getElementById(svgId);
+      const ns  = 'http://www.w3.org/2000/svg';
+      const uw  = W - left - right;
+      const uh  = H - top  - bottom;
+      const py  = v => top + ((vMax - v) / (vMax - vMin)) * uh;
+      const pidx = idx => left + (idx / (labels.length - 1)) * uw;
+
+      // Crosshair
+      const xline = document.createElementNS(ns,'line');
+      xline.setAttribute('stroke','#bbb'); xline.setAttribute('stroke-width','1.2');
+      xline.setAttribute('stroke-dasharray','4 3'); xline.setAttribute('y1',top); xline.setAttribute('y2',H-bottom);
+      xline.setAttribute('visibility','hidden'); xline.setAttribute('pointer-events','none');
+      svg.appendChild(xline);
+
+      // Dots
+      function makeDot(fill) {
+        const c = document.createElementNS(ns,'circle');
+        c.setAttribute('r','5'); c.setAttribute('fill',fill);
+        c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+        c.setAttribute('visibility','hidden'); c.setAttribute('pointer-events','none');
+        svg.appendChild(c); return c;
+      }
+      const dotA = makeDot('#000');
+      const dotB = seriesB ? makeDot('#888') : null;
+
+      // Tooltip (HTML inside foreignObject)
+      const fo = document.createElementNS(ns,'foreignObject');
+      fo.setAttribute('width','210'); fo.setAttribute('height','100');
+      fo.setAttribute('visibility','hidden'); fo.setAttribute('pointer-events','none');
+      const tipDiv = document.createElement('div');
+      tipDiv.style.cssText = 'background:rgba(255,255,255,.96);border:1px solid #ccc;padding:8px 11px;font-family:"Times New Roman",serif;font-size:12px;line-height:1.7;box-shadow:0 2px 8px rgba(0,0,0,.13);border-radius:3px;white-space:nowrap;';
+      fo.appendChild(tipDiv); svg.appendChild(fo);
+
+      // Transparent hit area
+      const hit = document.createElementNS(ns,'rect');
+      hit.setAttribute('x',left); hit.setAttribute('y',top);
+      hit.setAttribute('width',uw); hit.setAttribute('height',uh);
+      hit.setAttribute('fill','transparent'); svg.appendChild(hit);
+
+      function fmt(v) { return (v>=0?'+':'')+v.toFixed(2)+'%'; }
+
+      hit.addEventListener('mousemove', evt => {
+        const rect = svg.getBoundingClientRect();
+        const svgX = (evt.clientX - rect.left) * (W / rect.width);
+        const idx  = Math.max(0, Math.min(labels.length-1,
+                       Math.round((svgX - left) / uw * (labels.length-1))));
+
+        const x  = pidx(idx);
+        const yA = py(seriesA[idx]);
+        const yB = seriesB ? py(seriesB[idx]) : null;
+
+        xline.setAttribute('x1',x); xline.setAttribute('x2',x);
+        xline.setAttribute('visibility','visible');
+        dotA.setAttribute('cx',x); dotA.setAttribute('cy',yA);
+        dotA.setAttribute('visibility','visible');
+        if (dotB && yB!==null) {
+          dotB.setAttribute('cx',x); dotB.setAttribute('cy',yB);
+          dotB.setAttribute('visibility','visible');
+        }
+
+        // Date: show as "05. Jan" style
+        const d = labels[idx]; // "05.01.2026"
+        const MONTHS=['','Jan','Feb','Mrz','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+        const mo = MONTHS[parseInt(d.substring(3,5))];
+        const dayStr = d.substring(0,2)+'. '+mo;
+
+        let inner = `<strong>${dayStr}</strong><br>`;
+        inner += `<span style="display:inline-block;width:16px;border-top:2.5px solid #000;margin-right:4px;vertical-align:middle"></span>${labelA}: ${fmt(seriesA[idx])}`;
+        if (seriesB) inner += `<br><span style="display:inline-block;width:16px;border-top:2px dashed #888;margin-right:4px;vertical-align:middle"></span>${labelB}: ${fmt(seriesB[idx])}`;
+        tipDiv.innerHTML = inner;
+
+        const tipH = seriesB ? 78 : 58;
+        fo.setAttribute('height', tipH);
+        const tipW = 210;
+        const tx = (x + 16 + tipW > W - right + 10) ? x - tipW - 14 : x + 16;
+        const ty = Math.max(top+2, Math.min(yA - tipH/2, H - bottom - tipH));
+        fo.setAttribute('x',tx); fo.setAttribute('y',ty);
+        fo.setAttribute('visibility','visible');
+      });
+
+      hit.addEventListener('mouseleave', () => {
+        xline.setAttribute('visibility','hidden');
+        dotA.setAttribute('visibility','hidden');
+        if (dotB) dotB.setAttribute('visibility','hidden');
+        fo.setAttribute('visibility','hidden');
+      });
+    }
+  </script>
+</body>
+</html>
